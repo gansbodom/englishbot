@@ -4,8 +4,7 @@ from telebot.handler_backends import State, StatesGroup
 import random
 from create_db2 import *
 
-#TOKEN = '1693269053:AAFz2VNZhzKQHQA8laNCH3B0TLpz4QQdLWg'
-TOKEN = '6515278611:AAFtXWXvJtpUQvyRpbACYcPeVv9eH37CsSs'
+TOKEN = ''
 bot = telebot.TeleBot(TOKEN)
 
 userStep = {}
