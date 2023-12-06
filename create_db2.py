@@ -42,7 +42,12 @@ def check_user(chat_id): # помимо ID почему-то всегда воз
         cur.execute("""
         SELECT USER_ID FROM USERS WHERE USER_NUMBER=%s
         """, [chat_id])
-        print(cur.fetchone())
+        result = cur.fetchone()
+        if result:
+            #print(result[0])
+            return True
+        else:
+            return False
 
 
 def add_user_to_db(chat_id):
@@ -79,13 +84,13 @@ def add_word(word, translation, chat_id):
             SELECT WORD_ID FROM WORDS WHERE WORD=%s 
             """, [word])
             word_id = cur.fetchone()  # Получаем id слова из таблицы words
-            print(f'{word} id is {word_id}')
+            #print(f'{word} id is {word_id}')
 
             cur.execute("""
             SELECT USER_ID FROM USERS WHERE USER_NUMBER=%s 
             """, [chat_id])
             user_id = cur.fetchone()[0] # Получаем id пользователя из таблицы words
-            print(f'{chat_id} : {user_id}')
+            #print(f'{chat_id} : {user_id}')
 
             cur.execute("""
             INSERT INTO USERS_WORDS(USER_ID,WORD_ID) VALUES
@@ -126,4 +131,5 @@ def get_words(chat_id):
 
 
 if __name__ == '__main__':
-    create_tables()
+    #create_tables()
+    pass
