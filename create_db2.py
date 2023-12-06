@@ -3,10 +3,10 @@ from psycopg2 import extras
 
 conn = psycopg2.connect(database="englishbot", user="postgres", password="postgres")
 
-words = {'NO': 'нет', 'YES': 'ДА'}
+words = {'Car': 'Машина', 'Peace': 'Мир', 'Green': 'Зелёный', 'Hello': 'Привет'}
 
 
-def create_tables(conn):
+def create_tables():
     """Создаём таблицы БД, добавлена проверка
      слов и их переводов на уникальность"""
 
@@ -20,8 +20,8 @@ def create_tables(conn):
         cur.execute("""
         CREATE TABLE IF NOT EXISTS WORDS(
         WORD_ID SERIAL PRIMARY KEY,
-        WORD VARCHAR(80) UNIQUE NOT NULL,
-        TRANSLATION VARCHAR(80) UNIQUE NOT NULL);
+        WORD VARCHAR(80) NOT NULL,
+        TRANSLATION VARCHAR(80) NOT NULL);
         """)
 
         cur.execute("""
@@ -35,20 +35,17 @@ def create_tables(conn):
         conn.commit()
 
 
-def check_user(conn, chat_id):
+def check_user(chat_id): # помимо ID почему-то всегда возвращает None
     """Проверяет chat_id на наличие в БД,
      в случае наличия - возвращает True"""
     with conn.cursor() as cur:
-        try:
-            cur.execute("""
-            SELECT USER_ID FROM USERS WHERE USER_NUMBER=%s
-            """, [chat_id])
-            id = cur.fetchone()[0]
-            return
-        except:
-            pass
+        cur.execute("""
+        SELECT USER_ID FROM USERS WHERE USER_NUMBER=%s
+        """, [chat_id])
+        print(cur.fetchone())
 
-def add_user_to_db(conn, chat_id):
+
+def add_user_to_db(chat_id):
     """Добавляем chat_id пользователя в БД"""
     with conn.cursor() as cur:
         try:
@@ -57,43 +54,56 @@ def add_user_to_db(conn, chat_id):
             (%s)
             """, [chat_id])
             conn.commit()
+            print(f'Chat_id {chat_id} added')
         except:
-            print('user alerady in db')
+            print(f'[INFO] пользователь {chat_id} уже есть в БД')
+
+        #finally:
+        #    if conn:
+        #        conn.close()
+        #        print(f'[INFO] PostgreSQL connection closed')
 
 
-def add_word(conn,word,translation,chat_id):
-    """Добавляем слова и их перевод в БД"""
+def add_word(word, translation, chat_id):
+    """Добавляем слова и их перевод в БД, связываем слова и пользователя"""
     with conn.cursor() as cur:
         try:
             cur.execute("""
             INSERT INTO WORDS(WORD, TRANSLATION) VALUES
             (%s, %s)
             """, (word, translation))
-
+        except:
+            print(f'[INFO] Слово {word} уже есть в БД')
+        try:
             cur.execute("""
             SELECT WORD_ID FROM WORDS WHERE WORD=%s 
             """, [word])
-            word_id = cur.fetchone() #Получаем значение word_id
+            word_id = cur.fetchone()  # Получаем id слова из таблицы words
             print(f'{word} id is {word_id}')
 
             cur.execute("""
-            SELECT USER_ID FROM USERS WHERE USER_NUMBER=%s
+            SELECT USER_ID FROM USERS WHERE USER_NUMBER=%s 
             """, [chat_id])
-            user_id = cur.fetchone()[0]
+            user_id = cur.fetchone()[0] # Получаем id пользователя из таблицы words
             print(f'{chat_id} : {user_id}')
 
             cur.execute("""
             INSERT INTO USERS_WORDS(USER_ID,WORD_ID) VALUES
             (%s,%s)
-            """, (user_id, word_id))
+            """, (user_id, word_id)) # Связываем добавляемое слово и пользователя
 
             conn.commit()
 
         except:
-            print(f'Слово {word} уже добавлено')
+            print(f'[INFO] Слово уже привязано к пользователю')
+
+        #finally:
+        #    if conn:
+        #        conn.close()
+        #        print(f'[INFO] Соединение с БД Postgres закрыто')
 
 
-def get_words(conn, chat_id):
+def get_words(chat_id):
     """Получаем 4 случайных пары слов и переводов для заданного пользователя"""
     with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
         try:
@@ -108,23 +118,12 @@ def get_words(conn, chat_id):
             limit 4
             """, [chat_id])
             rows = cur.fetchall()
-            dct = [{k: v for k, v in record.items()} for record in rows] #создаём словарь
+            dct = [{k: v for k, v in record.items()} for record in rows]  # формируем словарь из 4-х слов
             return dct
+
         except:
-            pass
+            print(f'[INFO] Ошибка БД Postgres')
 
 
 if __name__ == '__main__':
-    #create_tables(conn)
-    #add_user_to_db(conn, 123459)
-    #for w, t in words.items():
-    #    add_word(conn, w, t)
-
-    add_word(conn,'hв', 'ndddd', 5306142)
-
-    #if check_user(conn, 123456):
-    #    print('oloo')
-    #a = check_user(conn, 123456, return_id=True)
-    #print(a)
-    #n = get_words(conn, 5306142)
-    #print(n)
+    create_tables()
