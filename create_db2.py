@@ -130,6 +130,32 @@ def get_words(chat_id):
             print(f'[INFO] Ошибка БД Postgres')
 
 
+def get_words_count(chat_id):
+    """Получаем 4 случайных пары слов и переводов для заданного пользователя"""
+    with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
+        try:
+            cur.execute("""
+                        SELECT USER_ID FROM USERS WHERE USER_NUMBER=%s 
+                        """, [chat_id])
+            user_id = cur.fetchone()[0]  # Получаем id пользователя из таблицы words
+        except:
+            print(f'[INFO] Ошибка БД Postgres')
+
+    with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
+        try:
+            cur.execute("""
+                        SELECT COUNT(word_id)
+                        FROM public.users_words
+                        WHERE user_id=%s;
+                        """, [user_id])
+            words_count = cur.fetchone()[0]
+            return words_count
+        except:
+            print(f'[INFO] Ошибка БД Postgres')
+
+
 if __name__ == '__main__':
     #create_tables()
+    # a = get_words_count(5306142)
+    # print(a)
     pass

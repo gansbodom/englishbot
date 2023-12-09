@@ -24,8 +24,6 @@ class MyStates(StatesGroup):
     target_word = State()
     translate_word = State()
     another_word = State()
-    added_word = State()# Добавляемое слово
-    added_translation = State()# Перевод добавляемого слова
 
 
 @bot.message_handler(commands=['cards', 'start'])
@@ -70,6 +68,9 @@ def start_bot(message):
 
 @bot.message_handler(func=lambda message: True, content_types=['text'])
 def message_reply(message):
+    """
+    Обрабатывает сообщения, полученные от пользователя
+    """
     with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
         target_word = data['target_word']
     if message.text == target_word:
@@ -92,6 +93,9 @@ def message_reply(message):
 
 
 def new_word(message):
+    """
+    Принимает от пользователя новое англ. слово
+    """
     with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
         data['added_word'] = message.text
     bot.send_message(message.chat.id, 'Введите перевод:')
@@ -99,48 +103,18 @@ def new_word(message):
 
 
 def new_translation(message):
+    """
+    Принимает от пользователя перевод новго слова и добавляет пару слово-значение в БД
+    """
     with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
         data['added_translation'] = message.text
     bot.send_message(message.chat.id, data['added_word'])
     bot.send_message(message.chat.id, data['added_translation'])
     add_word(data['added_word'], data['added_translation'], message.chat.id)
+    words_cnt = get_words_count(message.chat.id)
+    bot.send_message(message.chat.id, f'Количество изучаемых слов: {words_cnt}')
 
-# @bot.message_handler(state=MyStates.added_word)
-# def new_function(message):
-#     bot.send_message(message.chat.id, 'Мы внутри')
-
-# @bot.message_handler(commands=['add'])
-# def add_word(message):
-#     bot.send_message(message.chat.id, 'Добаfffвьте слово:')
-#     bot.set_state(message.from_user.id, MyStates.added_word, message.chat.id)
-#
-#
-# @bot.message_handler(state=MyStates.added_word)
-# def addd_word(message):
-#     """
-#     Шаг 1. Получаем от пользователя слово, которое необходимо добавить в БД
-#     """
-#     bot.send_message(message.chat.id, 'Теперь введите перевод слова:')
-#     bot.set_state(message.from_user.id, MyStates.added_translation, message.chat.id)
-#     with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
-#         data['added_word'] = message.text
-#
-#
-# @bot.message_handler(state=MyStates.added_translation)
-# def add_translation(message):
-#     """
-#     Шаг 2. Получаем от пользователя перевод слова, которое необходимо добавить в БД
-#     """
-#     with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
-#         data['added_translation'] = message.text
-#         msg = ("Ready, take a look:\n<b>"
-#                 f"Слово: {data['added_word']}\n"
-#                 f"Перевод: {data['added_translation']}</b>")
-#         bot.send_message(message.chat.id, msg, parse_mode="html")
-#         bot.delete_state(message.from_user.id, message.chat.id)
-
-
-bot.add_custom_filter(custom_filters.StateFilter(bot))
+#bot.add_custom_filter(custom_filters.StateFilter(bot))
 
 if __name__ == '__main__':
     print('Bot is running')
