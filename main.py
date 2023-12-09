@@ -9,7 +9,7 @@ TOKEN = '6515278611:AAFtXWXvJtpUQvyRpbACYcPeVv9eH37CsSs'
 state_storage = StateMemoryStorage()
 bot = telebot.TeleBot(TOKEN, state_storage=state_storage)
 
-userStep = {}
+#userStep = {}
 buttons = []
 
 
@@ -17,6 +17,7 @@ class Commands:
     ADD_WORD = 'Добавить слово➕'
     DELETE_WORD = 'Удалить слово🔙'
     NEXT = 'Дальше⏭'
+    EXAMPLE = 'Пример 🇬🇧'
 
 
 class MyStates(StatesGroup):
@@ -49,7 +50,8 @@ def start_bot(message):
     next_btn = types.KeyboardButton(Commands.NEXT)
     add_word_btn = types.KeyboardButton(Commands.ADD_WORD)
     delete_word_btn = types.KeyboardButton(Commands.DELETE_WORD)
-    buttons.extend([next_btn, add_word_btn, delete_word_btn])
+    example_btn = types.KeyboardButton(Commands.EXAMPLE)
+    buttons.extend([next_btn, add_word_btn, example_btn, delete_word_btn])
 
     markup.add(*buttons)
 
@@ -74,13 +76,16 @@ def message_reply(message):
         bot.send_message(message.chat.id, f'Всё правильно👌 \n {target_word} -> {russian_word}')
         start_bot(message)
 
+    elif message.text == Commands.ADD_WORD:
+        bot.send_message(message.chat.id, 'Введите слово🇬🇧:')
+        bot.register_next_step_handler(message, new_word)
+
     elif message.text == Commands.NEXT:
         bot.send_message(message.chat.id, 'Следующее слово')
         start_bot(message)
 
-    elif message.text == Commands.ADD_WORD:
-        bot.send_message(message.chat.id, 'Введите слово🇬🇧:')
-        bot.register_next_step_handler(message, new_word)
+    elif message.text == Commands.EXAMPLE:
+        bot.send_message(message.chat.id, 'Пример')
 
     elif message.text == Commands.DELETE_WORD:
         bot.send_message(message.chat.id, 'Введите слово, которое хотите удалить🇷🇺:')
@@ -125,6 +130,7 @@ def delete_word(message):
         with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
             data['deleted_word'] = message.text
         del_word(data['deleted_word'], message.chat.id)
+    words_cnt = get_words_count(message.chat.id)
     bot.send_message(message.chat.id, f'Количество изучаемых слов: {words_cnt}')
     start_bot(message)  # после удаления слова бот возвращается угадыванию слов
 

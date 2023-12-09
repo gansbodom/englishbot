@@ -143,8 +143,8 @@ def get_words_count(chat_id):
         try:
             cur.execute("""
                         SELECT COUNT(word_id)
-                        FROM public.users_words
-                        WHERE user_id=%s;
+                        FROM USERS_WORDS
+                        WHERE USER_ID=%s;
                         """, [user_id])
             words_count = cur.fetchone()[0]
             return words_count
@@ -210,6 +210,6 @@ if __name__ == '__main__':
     #     """, [word])
     #     word_id = cur.fetchall()
     #     print(word_id)
-
+    print(get_words_count(5306142))
     # check_user(5306142, get_id=True)
     pass
