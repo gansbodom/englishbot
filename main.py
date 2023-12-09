@@ -1,7 +1,6 @@
 import telebot
 from telebot import types
 from telebot.handler_backends import State, StatesGroup
-from telebot import custom_filters
 from telebot.storage import StateMemoryStorage
 import random
 from create_db2 import *
@@ -28,26 +27,22 @@ class MyStates(StatesGroup):
 
 @bot.message_handler(commands=['cards', 'start'])
 def start_bot(message):
-    if not check_user(message.chat.id): #Проверяем - есть ли пользователь в БД Postgres
-        add_user_to_db(message.chat.id) #Добавляем новго пользователя в таблицу USERS БД Postgres
-        for w, t in words.items(): #Добавляем 4 базовых слова для пользователя
+    if not check_user(message.chat.id):  # Проверяем - есть ли пользователь в БД Postgres
+        add_user_to_db(message.chat.id)  # Добавляем нового пользователя в таблицу USERS БД Postgres
+        for w, t in words.items():  # Добавляем 4 базовых слова для пользователя
             add_word(w, t, message.chat.id)
 
     markup = types.ReplyKeyboardMarkup(row_width=2)
-    #получаем слова из БД
+    # получаем слова из БД
     words_dct = get_words(message.chat.id)
     print(words_dct)
     russian_word = words_dct[0]['translation']
     target_word = words_dct[0]['word']
     other_words = []
-    for wrd in [1,2,3]:
+    for wrd in [1, 2, 3]:
         other_words.append(words_dct[wrd]['word'])
 
-    ##russian_word = 'Мир'
-    ##target_word = 'Peace'
-
     target_word_btn = types.KeyboardButton(target_word)
-    #other_words = ['Green', 'Car', 'Hello']
     other_words_buttons = [types.KeyboardButton(word) for word in other_words]
     buttons = [target_word_btn] + other_words_buttons
     random.shuffle(buttons)
@@ -58,7 +53,7 @@ def start_bot(message):
 
     markup.add(*buttons)
 
-    bot.send_message(message.chat.id, f'Угадай слово {russian_word}', reply_markup=markup)
+    bot.send_message(message.chat.id, f'Выбери перевод слова:\n 🇷🇺{russian_word}', reply_markup=markup)
     bot.set_state(message.from_user.id, MyStates.target_word, message.chat.id)
     with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
         data['target_word'] = target_word
@@ -73,8 +68,10 @@ def message_reply(message):
     """
     with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
         target_word = data['target_word']
+        russian_word = data['translate_word']
+
     if message.text == target_word:
-        bot.send_message(message.chat.id, 'Всё правильно')
+        bot.send_message(message.chat.id, f'Всё правильно👌 \n {target_word} -> {russian_word}')
         start_bot(message)
 
     elif message.text == Commands.NEXT:
@@ -82,11 +79,12 @@ def message_reply(message):
         start_bot(message)
 
     elif message.text == Commands.ADD_WORD:
-        bot.send_message(message.chat.id, 'Введите слово:')
+        bot.send_message(message.chat.id, 'Введите слово🇷🇺:')
         bot.register_next_step_handler(message, new_word)
 
     elif message.text == Commands.DELETE_WORD:
-        bot.send_message(message.chat.id, 'Удалить слово')
+        bot.send_message(message.chat.id, 'Введите слово, которое хотите удалить🇷🇺:')
+        bot.register_next_step_handler(message, delete_word)
 
     else:
         bot.send_message(message.chat.id, 'Ошибка')
@@ -98,13 +96,13 @@ def new_word(message):
     """
     with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
         data['added_word'] = message.text
-    bot.send_message(message.chat.id, 'Введите перевод:')
+    bot.send_message(message.chat.id, 'Введите перевод🇬🇧:')
     bot.register_next_step_handler(message, new_translation)
 
 
 def new_translation(message):
     """
-    Принимает от пользователя перевод новго слова и добавляет пару слово-значение в БД
+    Принимает от пользователя перевод нового слова и добавляет пару слово-значение в БД
     """
     with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
         data['added_translation'] = message.text
@@ -113,10 +111,22 @@ def new_translation(message):
     add_word(data['added_word'], data['added_translation'], message.chat.id)
     words_cnt = get_words_count(message.chat.id)
     bot.send_message(message.chat.id, f'Количество изучаемых слов: {words_cnt}')
+    start_bot(message)
 
-#bot.add_custom_filter(custom_filters.StateFilter(bot))
+
+def delete_word(message):
+    """
+    Удаляет заданное слово из БД для пользователя
+    """
+    with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
+        data['deleted_word'] = message.text
+    del_word(data['deleted_word'], message.chat.id)
+    words_cnt = get_words_count(message.chat.id)
+    bot.send_message(message.chat.id, f'Количество изучаемых слов: {words_cnt}')
+    start_bot(message)
+
 
 if __name__ == '__main__':
     print('Bot is running')
-    #bot.polling()
+    # bot.polling()
     bot.infinity_polling(skip_pending=True)
