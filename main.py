@@ -79,7 +79,7 @@ def message_reply(message):
         start_bot(message)
 
     elif message.text == Commands.ADD_WORD:
-        bot.send_message(message.chat.id, 'Введите слово🇷🇺:')
+        bot.send_message(message.chat.id, 'Введите слово🇬🇧:')
         bot.register_next_step_handler(message, new_word)
 
     elif message.text == Commands.DELETE_WORD:
@@ -96,7 +96,7 @@ def new_word(message):
     """
     with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
         data['added_word'] = message.text
-    bot.send_message(message.chat.id, 'Введите перевод🇬🇧:')
+    bot.send_message(message.chat.id, 'Введите перевод🇷🇺:')
     bot.register_next_step_handler(message, new_translation)
 
 

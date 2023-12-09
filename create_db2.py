@@ -183,7 +183,7 @@ def del_word(word, chat_id):
                        SELECT WORD_ID FROM WORDS WHERE TRANSLATION=%s 
                        """, [word])
             word_id = cur.fetchone()[0]  # Получаем id слова из таблицы words
-            # print(f'{word} id is {word_id}')
+            print(f'{word} id is {word_id}')
         except:
             print(f'[INFO] Слово {word} отсутствует в БД')
 
@@ -192,13 +192,13 @@ def del_word(word, chat_id):
                 DELETE FROM USERS_WORDS
                 WHERE user_id=%s AND word_id=%s
             """, (user_id, word_id))  # Удаляем связь пользователя и слова
-            # print(f'{user_id} {word_id}')
+            print(f'{user_id} {word_id}')
         except:
             print(f'[INFO] Ошибка БД Postgres')
 
         try:
             cur.execute("""
-            DELETE FROM WORDS WHERE WORD=%s;
+            DELETE FROM WORDS WHERE TRANSLATION=%s;
             """, [word])
 
             conn.commit()
@@ -210,6 +210,14 @@ if __name__ == '__main__':
     # create_tables()
     # a = get_words_count(5306142)
     # print(a)
-    # del_word('Cable', 5306142)
+    #del_word('Beer', 5306142)
+    #word = 'Дом'
+    # with conn.cursor() as cur:
+    #     cur.execute("""
+    #     SELECT WORD_ID FROM WORDS WHERE TRANSLATION='дом'
+    #     """, [word])
+    #     word_id = cur.fetchall()
+    #     print(word_id)
+
     # check_user(5306142, get_id=True)
     pass
