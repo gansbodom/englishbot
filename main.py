@@ -1,14 +1,18 @@
 import telebot
 from telebot import types
 from telebot.handler_backends import State, StatesGroup
+from telebot import custom_filters
+from telebot.storage import StateMemoryStorage
 import random
 from create_db2 import *
 
 TOKEN = '6515278611:AAFtXWXvJtpUQvyRpbACYcPeVv9eH37CsSs'
-bot = telebot.TeleBot(TOKEN)
+state_storage = StateMemoryStorage()
+bot = telebot.TeleBot(TOKEN, state_storage=state_storage)
 
 userStep = {}
 buttons = []
+
 
 class Commands:
     ADD_WORD = 'Добавить слово➕'
@@ -20,6 +24,8 @@ class MyStates(StatesGroup):
     target_word = State()
     translate_word = State()
     another_word = State()
+    added_word = State()# Добавляемое слово
+    added_translation = State()# Перевод добавляемого слова
 
 
 @bot.message_handler(commands=['cards', 'start'])
@@ -66,31 +72,77 @@ def start_bot(message):
 def message_reply(message):
     with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
         target_word = data['target_word']
-
     if message.text == target_word:
         bot.send_message(message.chat.id, 'Всё правильно')
         start_bot(message)
-    elif message.text == Commands.ADD_WORD:
-        bot.send_message(message.chat.id, 'Добавить слово')
-        bot.reply_to(message, 'Введите текст')  # Bot reply 'Введите текст'
-        @bot.message_handler(content_types=['text'])  # Создаём новую функцию ,реагирующую на любое сообщение
-        def message_input_step(message):
-            global text  # объявляем глобальную переменную
-            text = message.text
-            bot.reply_to(message, f'Ваш текст: {message.text}')
-        bot.register_next_step_handler(message,message_input_step)  # добавляем следующий шаг, перенаправляющий пользователя на message_input_step
-        #bot.reply_to(message, 'Введите текст')  # Bot reply 'Введите текст'
-        #message_input_step(message)
 
-    elif message.text == Commands.DELETE_WORD:
-        bot.send_message(message.chat.id, 'Удалить слово')
     elif message.text == Commands.NEXT:
         bot.send_message(message.chat.id, 'Следующее слово')
         start_bot(message)
+
+    elif message.text == Commands.ADD_WORD:
+        bot.send_message(message.chat.id, 'Введите слово:')
+        bot.register_next_step_handler(message, new_word)
+
+    elif message.text == Commands.DELETE_WORD:
+        bot.send_message(message.chat.id, 'Удалить слово')
+
     else:
         bot.send_message(message.chat.id, 'Ошибка')
 
 
+def new_word(message):
+    with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
+        data['added_word'] = message.text
+    bot.send_message(message.chat.id, 'Введите перевод:')
+    bot.register_next_step_handler(message, new_translation)
+
+
+def new_translation(message):
+    with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
+        data['added_translation'] = message.text
+    bot.send_message(message.chat.id, data['added_word'])
+    bot.send_message(message.chat.id, data['added_translation'])
+    add_word(data['added_word'], data['added_translation'], message.chat.id)
+
+# @bot.message_handler(state=MyStates.added_word)
+# def new_function(message):
+#     bot.send_message(message.chat.id, 'Мы внутри')
+
+# @bot.message_handler(commands=['add'])
+# def add_word(message):
+#     bot.send_message(message.chat.id, 'Добаfffвьте слово:')
+#     bot.set_state(message.from_user.id, MyStates.added_word, message.chat.id)
+#
+#
+# @bot.message_handler(state=MyStates.added_word)
+# def addd_word(message):
+#     """
+#     Шаг 1. Получаем от пользователя слово, которое необходимо добавить в БД
+#     """
+#     bot.send_message(message.chat.id, 'Теперь введите перевод слова:')
+#     bot.set_state(message.from_user.id, MyStates.added_translation, message.chat.id)
+#     with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
+#         data['added_word'] = message.text
+#
+#
+# @bot.message_handler(state=MyStates.added_translation)
+# def add_translation(message):
+#     """
+#     Шаг 2. Получаем от пользователя перевод слова, которое необходимо добавить в БД
+#     """
+#     with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
+#         data['added_translation'] = message.text
+#         msg = ("Ready, take a look:\n<b>"
+#                 f"Слово: {data['added_word']}\n"
+#                 f"Перевод: {data['added_translation']}</b>")
+#         bot.send_message(message.chat.id, msg, parse_mode="html")
+#         bot.delete_state(message.from_user.id, message.chat.id)
+
+
+bot.add_custom_filter(custom_filters.StateFilter(bot))
+
 if __name__ == '__main__':
     print('Bot is running')
-    bot.polling()
+    #bot.polling()
+    bot.infinity_polling(skip_pending=True)
