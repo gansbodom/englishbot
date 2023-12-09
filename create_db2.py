@@ -83,16 +83,9 @@ def add_word(word, translation, chat_id):
         try:
             cur.execute("""
             INSERT INTO WORDS(WORD, TRANSLATION) VALUES
-            (%s, %s)
+            (%s, %s) RETURNING word_id
             """, (word, translation))
-        except:
-            print(f'[INFO] Слово {word} уже есть в БД')
-        try:
-            cur.execute("""
-            SELECT WORD_ID FROM WORDS WHERE WORD=%s 
-            """, [word])
-            word_id = cur.fetchone()  # Получаем id слова из таблицы words
-            # print(f'{word} id is {word_id}')
+            word_id = cur.fetchone()  # Получаем id слова из таблицы word
 
             cur.execute("""
             SELECT USER_ID FROM USERS WHERE USER_NUMBER=%s 
@@ -109,11 +102,6 @@ def add_word(word, translation, chat_id):
 
         except:
             print(f'[INFO] Слово уже привязано к пользователю')
-
-        # finally:
-        #    if conn:
-        #        conn.close()
-        #        print(f'[INFO] Соединение с БД Postgres закрыто')
 
 
 def get_words(chat_id):
@@ -180,11 +168,15 @@ def del_word(word, chat_id):
             # print(f'User {chat_id } id is {user_id}')
         try:
             cur.execute("""
-                       SELECT WORD_ID FROM WORDS WHERE TRANSLATION=%s 
-                       """, [word])
+            SELECT WORDS.WORD_ID 
+            FROM USERS_WORDS ,WORDS
+            WHERE USERS_WORDS.WORD_ID = WORDS.WORD_ID
+            AND WORDS.TRANSLATION = %s
+            AND USER_ID = %s
+                       """, (word, user_id))
             word_id = cur.fetchone()[0]  # Получаем id слова из таблицы words
             print(f'{word} id is {word_id}')
-        except:
+        except Exception:
             print(f'[INFO] Слово {word} отсутствует в БД')
 
         try:
@@ -198,8 +190,8 @@ def del_word(word, chat_id):
 
         try:
             cur.execute("""
-            DELETE FROM WORDS WHERE TRANSLATION=%s;
-            """, [word])
+            DELETE FROM WORDS WHERE TRANSLATION=%s AND WORD_ID=%s;
+            """, (word, word_id))
 
             conn.commit()
         except:
@@ -210,7 +202,7 @@ if __name__ == '__main__':
     # create_tables()
     # a = get_words_count(5306142)
     # print(a)
-    #del_word('Beer', 5306142)
+    #del_word('Чашка', 5306142)
     #word = 'Дом'
     # with conn.cursor() as cur:
     #     cur.execute("""

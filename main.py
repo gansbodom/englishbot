@@ -111,19 +111,22 @@ def new_translation(message):
     add_word(data['added_word'], data['added_translation'], message.chat.id)
     words_cnt = get_words_count(message.chat.id)
     bot.send_message(message.chat.id, f'Количество изучаемых слов: {words_cnt}')
-    start_bot(message)
+    start_bot(message)  # после добавления слова бот возвращается угадыванию слов
 
 
 def delete_word(message):
     """
     Удаляет заданное слово из БД для пользователя
+    Добавлена проверка на количество слов, изучаемых пользователем
+    (должно быть не меньше 4-х, по количеству кнопок)
     """
-    with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
-        data['deleted_word'] = message.text
-    del_word(data['deleted_word'], message.chat.id)
     words_cnt = get_words_count(message.chat.id)
+    if words_cnt > 4:
+        with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
+            data['deleted_word'] = message.text
+        del_word(data['deleted_word'], message.chat.id)
     bot.send_message(message.chat.id, f'Количество изучаемых слов: {words_cnt}')
-    start_bot(message)
+    start_bot(message)  # после удаления слова бот возвращается угадыванию слов
 
 
 if __name__ == '__main__':
