@@ -3,7 +3,8 @@ from psycopg2 import extras
 
 conn = psycopg2.connect(database="englishbot", user="postgres", password="postgres")
 
-words = {'Car': 'Машина', 'Peace': 'Мир', 'Green': 'Зелёный', 'Hello': 'Привет'}
+words = {'Car': 'Машина', 'Peace': 'Мир', 'Green': 'Зелёный', 'Hello': 'Привет', 'Cup': 'Чашка',
+         'Cat': 'Кошка', 'Water': 'Вода', 'Sun': 'Солнце', 'Light': 'Свет', 'Word': 'Слово'}
 
 
 def create_tables():
@@ -57,7 +58,9 @@ def check_user(chat_id, get_id=None):
 
 
 def add_user_to_db(chat_id):
-    """Добавляем chat_id пользователя в БД"""
+    """
+    Добавляем chat_id пользователя в БД
+    """
     with conn.cursor() as cur:
         try:
             cur.execute("""
@@ -86,7 +89,6 @@ def add_word(word, translation, chat_id):
             SELECT USER_ID FROM USERS WHERE USER_NUMBER=%s 
             """, [chat_id])
             user_id = cur.fetchone()[0]  # Получаем id пользователя из таблицы words
-            # print(f'{chat_id} : {user_id}')
 
             cur.execute("""
             INSERT INTO USERS_WORDS(USER_ID,WORD_ID) VALUES
@@ -96,11 +98,13 @@ def add_word(word, translation, chat_id):
             conn.commit()
 
         except:
-            print(f'[INFO] Слово уже привязано к пользователю')
+            print(f'[INFO] Ошибка добавления слова в БД')
 
 
 def get_words(chat_id):
-    """Получаем 4 случайных пары слов и переводов для заданного пользователя"""
+    """
+    Получаем 4 случайных пары слов и переводов для заданного пользователя
+    """
     with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
         try:
             cur.execute("""
@@ -160,18 +164,17 @@ def del_word(word, chat_id):
             print(f'User id is: {user_id}')
         except:
             print(f'[INFO] Пользователь {chat_id} отсутствует в БД')
-            # print(f'User {chat_id } id is {user_id}')
         try:
             cur.execute("""
-            SELECT WORDS.WORD_ID 
-            FROM USERS_WORDS ,WORDS
-            WHERE USERS_WORDS.WORD_ID = WORDS.WORD_ID
-            AND WORDS.TRANSLATION = %s
-            AND USER_ID = %s
+                        SELECT WORDS.WORD_ID 
+                        FROM USERS_WORDS ,WORDS
+                        WHERE USERS_WORDS.WORD_ID = WORDS.WORD_ID
+                        AND WORDS.TRANSLATION = %s
+                        AND USER_ID = %s
                        """, (word, user_id))
             word_id = cur.fetchone()[0]  # Получаем id слова из таблицы words
             print(f'{word} id is {word_id}')
-        except Exception:
+        except:
             print(f'[INFO] Слово {word} отсутствует в БД')
 
         try:
@@ -187,7 +190,6 @@ def del_word(word, chat_id):
             cur.execute("""
             DELETE FROM WORDS WHERE TRANSLATION=%s AND WORD_ID=%s;
             """, (word, word_id))
-
             conn.commit()
         except:
             print(f'[INFO] невозможно удалить слово "{word}" из БД, возможно связано с другими пользователями')
@@ -205,6 +207,6 @@ if __name__ == '__main__':
     #     """, [word])
     #     word_id = cur.fetchall()
     #     print(word_id)
-    print(get_words_count(5306142))
+    # print(get_words_count(5306142))
     # check_user(5306142, get_id=True)
     pass
