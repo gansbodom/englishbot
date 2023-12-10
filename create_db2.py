@@ -196,7 +196,7 @@ def del_word(word, chat_id):
 
 
 if __name__ == '__main__':
-    # create_tables()
+    create_tables()
     # a = get_words_count(5306142)
     # print(a)
     #del_word('Чашка', 5306142)
