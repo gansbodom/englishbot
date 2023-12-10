@@ -69,11 +69,6 @@ def add_user_to_db(chat_id):
         except:
             print(f'[INFO] пользователь {chat_id} уже есть в БД')
 
-        # finally:
-        #    if conn:
-        #        conn.close()
-        #        print(f'[INFO] PostgreSQL connection closed')
-
 
 def add_word(word, translation, chat_id):
     """

@@ -4,12 +4,12 @@ from telebot.handler_backends import State, StatesGroup
 from telebot.storage import StateMemoryStorage
 import random
 from create_db2 import *
+from example_request import get_example
 
 TOKEN = '6515278611:AAFtXWXvJtpUQvyRpbACYcPeVv9eH37CsSs'
 state_storage = StateMemoryStorage()
 bot = telebot.TeleBot(TOKEN, state_storage=state_storage)
 
-#userStep = {}
 buttons = []
 
 
@@ -26,18 +26,34 @@ class MyStates(StatesGroup):
     another_word = State()
 
 
+@bot.message_handler(content_types=["new_chat_members"])
+def handler_new_member(message):
+    user_name = message.new_chat_member.first_name
+    bot.send_message(message.chat.id, "Добро пожаловать, {0}! "  # Приветствуем нового пользователя
+                                      "Для начала введите команду '/start'".format(user_name))
+
+
 @bot.message_handler(commands=['cards', 'start'])
 def start_bot(message):
+    """
+    Основная функция, связывает пользователя с БД
+    """
     if not check_user(message.chat.id):  # Проверяем - есть ли пользователь в БД Postgres
         add_user_to_db(message.chat.id)  # Добавляем нового пользователя в таблицу USERS БД Postgres
-        for w, t in words.items():  # Добавляем 4 базовых слова для пользователя
-            add_word(w, t, message.chat.id)
+        for word, translation in words.items():  # Добавляем 4 базовых слова для пользователя
+            add_word(word, translation, message.chat.id)
+        msg = 'Привет 👋 Давай попрактикуемся в английском языке.' \
+              'Тренировки можешь проходить в удобном для себя темпе.' \
+              'У тебя есть возможность использовать тренажёр как конструктор' \
+              'и собирать свою собственную базу для обучения. Для этого' \
+              ' воспрользуйся инструментами Добавить слово➕ или Удалить слово🔙.Ну что, начнём ⬇️?'
+        bot.send_message(message.chat.id, msg)  # Отправляем приветственное сообщение
 
     markup = types.ReplyKeyboardMarkup(row_width=2)
-    # получаем слова из БД
-    words_dct = get_words(message.chat.id)
+
+    words_dct = get_words(message.chat.id)  #  Получаем словарь с парами слово-значение из БД
     print(words_dct)
-    russian_word = words_dct[0]['translation']
+    russian_word = words_dct[0]['translation']  # Выбираем одно слово для изучения, и 3 - для фона
     target_word = words_dct[0]['word']
     other_words = []
     for wrd in [1, 2, 3]:
@@ -85,14 +101,14 @@ def message_reply(message):
         start_bot(message)
 
     elif message.text == Commands.EXAMPLE:
-        bot.send_message(message.chat.id, 'Пример')
+        bot.send_message(message.chat.id, get_example(target_word))
 
     elif message.text == Commands.DELETE_WORD:
         bot.send_message(message.chat.id, 'Введите слово, которое хотите удалить🇷🇺:')
         bot.register_next_step_handler(message, delete_word)
 
     else:
-        bot.send_message(message.chat.id, 'Ошибка')
+        bot.send_message(message.chat.id, 'Ошибка, попробуйте ещё раз')
 
 
 def new_word(message):
