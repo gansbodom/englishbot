@@ -36,11 +36,15 @@ def create_tables():
         conn.commit()
 
 
-def check_user(chat_id, get_id=None):
+def check_user(chat_id: int, get_id=None):
     """Проверяет chat_id на наличие в БД,
      в случае наличия - возвращает True
      При значении параметра get_id равном True
      возвращает id пользователя в таблице USERS БД
+     :param chat_id: telebot message.chat.id
+     :type chat_id: int
+     :param get_id: try to get id?
+     :type get_id: bool
      """
     with conn.cursor() as cur:
         cur.execute("""
@@ -57,9 +61,11 @@ def check_user(chat_id, get_id=None):
             return False
 
 
-def add_user_to_db(chat_id):
+def add_user_to_db(chat_id: int):
     """
     Добавляем chat_id пользователя в БД
+    :param chat_id: telebot message.chat.id
+    :type chat_id: int
     """
     with conn.cursor() as cur:
         try:
@@ -73,9 +79,15 @@ def add_user_to_db(chat_id):
             print(f'[INFO] пользователь {chat_id} уже есть в БД')
 
 
-def add_word(word, translation, chat_id):
+def add_word(word: str, translation: str, chat_id: int):
     """
     Добавляем слова и их перевод в БД, связываем слова и пользователя
+    :param word: english word
+    :type word: str
+    :param translation: russian word
+    :type translation: str
+    :param chat_id:
+    :type chat_id: int
     """
     with conn.cursor() as cur:
         try:
@@ -101,9 +113,11 @@ def add_word(word, translation, chat_id):
             print(f'[INFO] Ошибка добавления слова в БД')
 
 
-def get_words(chat_id):
+def get_words(chat_id: int) -> dict:
     """
     Получаем 4 случайных пары слов и переводов для заданного пользователя
+    :param chat_id: telebot message.chat.id
+    :type chat_id: int
     """
     with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
         try:
@@ -125,9 +139,11 @@ def get_words(chat_id):
             print(f'[INFO] Ошибка БД Postgres')
 
 
-def get_words_count(chat_id):
+def get_words_count(chat_id: int) -> int:
     """
     Возвращает количество слов, которые пользователь учит в данный момент
+    :param chat_id: telebot message.chat.id
+    :type chat_id: int
     """
     with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
         try:
@@ -151,9 +167,13 @@ def get_words_count(chat_id):
             print(f'[INFO] Ошибка БД Postgres')
 
 
-def del_word(word, chat_id):
+def del_word(word: str, chat_id: int):
     """
     Удаляем слово для текущего пользователя
+    :param word: english word
+    :type word: str
+    :param chat_id: telebot message.chat.id
+    :type chat_id: int
     """
     with conn.cursor() as cur:
         try:
@@ -197,16 +217,4 @@ def del_word(word, chat_id):
 
 if __name__ == '__main__':
     create_tables()
-    # a = get_words_count(5306142)
-    # print(a)
-    #del_word('Чашка', 5306142)
-    #word = 'Дом'
-    # with conn.cursor() as cur:
-    #     cur.execute("""
-    #     SELECT WORD_ID FROM WORDS WHERE TRANSLATION='дом'
-    #     """, [word])
-    #     word_id = cur.fetchall()
-    #     print(word_id)
-    # print(get_words_count(5306142))
-    # check_user(5306142, get_id=True)
-    pass
+

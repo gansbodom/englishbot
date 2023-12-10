@@ -6,7 +6,7 @@ import random
 from create_db2 import *
 from example_request import get_example
 
-TOKEN = '6515278611:AAFtXWXvJtpUQvyRpbACYcPeVv9eH37CsSs'
+TOKEN = ''
 state_storage = StateMemoryStorage()
 bot = telebot.TeleBot(TOKEN, state_storage=state_storage)
 
